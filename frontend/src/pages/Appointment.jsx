@@ -1,15 +1,19 @@
-import React from 'react'
-import { useParams } from 'react-router-dom'
+// import React from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useContext, useEffect, useState } from 'react'
 import { AppContext } from '../context/AppContext'
 import { assets } from '../assets/assets'
 import RelatedDoctors from '../components/RelatedDoctors'
+import { toast } from 'react-toastify'
+import axios from 'axios'
 
 const Appointment = () => {
 
   const {docId} = useParams()
-  const {doctors, currencySymbol} = useContext(AppContext)
+  const {doctors, currencySymbol, backendUrl, token, getDoctorsData} = useContext(AppContext)
   const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+
+  const navigate = useNavigate()
 
   // State variable to store the doctor info
   const [docInfo, setDocInfo] = useState(null)
@@ -26,52 +30,82 @@ const Appointment = () => {
   }
 
   const getAvailableSlots = async () => {
-    // setDocInfo([])
-    //getting current date
     const allSlots = [];
-    let today = new Date()
+    let today = new Date();
 
-    for(let i=0; i<7; i++) {
-      //getting date with index
-      let currentDate = new Date(today)
-      currentDate.setDate(today.getDate() + i)
+    for (let i = 0; i < 7; i++) {
+        let currentDate = new Date(today);
+        currentDate.setDate(today.getDate() + i);
 
-      //setting end time of the date with index
-      let endTime = new Date()
-      endTime.setDate(today.getDate() + i)
-      endTime.setHours(21,0,0,0)
+        let endTime = new Date();
+        endTime.setDate(today.getDate() + i);
+        endTime.setHours(21, 0, 0, 0);
 
-      //setting hours
-      if(today.getDate() === currentDate.getDate()) {
-        currentDate.setHours(currentDate.getHours() > 10 ? currentDate.getHours() + 1 : 10)
-        currentDate.setMinutes(currentDate.getMinutes() > 30 ? 30 : 0)
+        if (today.getDate() === currentDate.getDate()) {
+            currentDate.setHours(currentDate.getHours() > 10 ? currentDate.getHours() + 1 : 10);
+            currentDate.setMinutes(currentDate.getMinutes() > 30 ? 30 : 0);
+        } else {
+            currentDate.setHours(10);
+            currentDate.setMinutes(0);
+        }
 
+        const timeSlots = [];
+        while (currentDate < endTime) {
+            let formattedTime = currentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+
+            let day = currentDate.getDate()
+            let month = currentDate.getMonth() + 1
+            let year = currentDate.getFullYear()
+            const slotDate = day +"_"+ month +"_"+ year 
+            const slotTime = formattedTime
+
+            const isSlotAvailable = docInfo.slots_booked[slotDate] && docInfo.slots_booked[slotDate].includes(slotTime) ? false : true
+
+            if(isSlotAvailable) {
+              timeSlots.push({
+                  datetime: new Date(currentDate),
+                  time: formattedTime
+              });
+            }
+            currentDate.setMinutes(currentDate.getMinutes() + 30);
+        }
+
+        allSlots.push(timeSlots);
+    }
+
+    setDocSlots(allSlots);
+};
+
+  const bookAppointment = async () => {
+    if(!token){
+      toast.warn('Please login to book an appointment')
+      return navigate('/login')
+    }
+    try {
+
+      const date = docSlots[slotIndex][0].datetime
+
+      let day = date.getDate()
+      let month = date.getMonth() + 1
+      let year = date.getFullYear()
+
+      const slotDate = day +"_"+ month +"_"+ year
+      // console.log(slotDate)
+
+      //api call to book appointment
+      const {data} = await axios.post(backendUrl + '/api/user/book-appointment', {docId, slotDate, slotTime}, {headers: {token}})
+      if(data.success){
+        toast.success(data.message)
+        getDoctorsData()
+        navigate('/my-appointments')
       }
       else {
-        currentDate.setHours(10)
-        currentDate.setMinutes(0)
-      }
-
-      
-      const timeSlots = []
-      while(currentDate < endTime){
-        let formattedTime = currentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-
-        //add slot to array
-        timeSlots.push({
-          datetime : new Date(currentDate),
-          time : formattedTime
-        })
-
-        //incrementing time by 30 minutes
-        currentDate.setMinutes(currentDate.getMinutes() + 30)
-
-      }
-      // setDocSlots(prev => [...prev, timeSlots])
-      allSlots.push(timeSlots)
+        toast.error(data.message)
+      }  
+    } catch (error) {
+      console.log(error)
+      console.log(error.message)
     }
-    setDocSlots(allSlots)
-     
   }
 
   //fetchDoctInfo will be called when the page loads
@@ -141,7 +175,7 @@ const Appointment = () => {
             </p>
           ))}
         </div>
-        <button className='bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6'>Book an Appointment
+        <button onClick={bookAppointment} className='bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6'>Book an Appointment
         </button>
       </div>
 
