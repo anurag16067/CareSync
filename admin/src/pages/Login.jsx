@@ -4,6 +4,7 @@ import { useState, useContext } from 'react'
 import { AdminContext } from '../context/AdminContext'
 import axios from 'axios'
 import {toast} from 'react-toastify'
+import { DoctorContext } from '../context/DoctorContext'
 
 const Login = () => {
 
@@ -13,6 +14,7 @@ const Login = () => {
   const [password, setPassword] = useState('')
 
   const {setAToken, backendUrl} = useContext(AdminContext)
+  const {setDToken} = useContext(DoctorContext)
 
   // function to handle form submission
   const onSubmitHandler = async (event) => {
@@ -29,9 +31,23 @@ const Login = () => {
         else {
           toast.error(data.message)
         }
+      } else {
+        const {data} = await axios.post(backendUrl + '/api/doctor/login', {email, password})
+        if(data.success){
+          // console.log(data.token)
+          // store token 
+          localStorage.setItem('dToken', data.token) // store token in local storage as when we refresh the page the token will be lost
+          setDToken(data.token)
+          console.log(data.token)
+        }
+        else {
+          toast.error(data.message)
+
       }
       
-    } catch (error) {
+    } } catch (error) {
+      console.log(error)
+      toast.error(error.message)
       
     }
 
