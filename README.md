@@ -1,216 +1,262 @@
-CareSync — MERN Doctor Appointment Platform
+# CareSync: Doctor Appointment Platform with AI Symptom Checker
 
-CareSync is a full-stack web application that streamlines doctor appointment bookings with clear, role-based experiences for patients, doctors, and admins. Built on the MERN stack, it focuses on secure auth, smooth scheduling, and an intuitive UI.
+CareSync is a full-stack MERN application for booking doctor appointments. It has three role-based experiences, for **patients**, **doctors** and **admins**, plus an **AI Symptom Checker** powered by Google Gemini. Patients describe how they feel, and it recommends the right specialist.
 
-Live Demo: care-sync-inky.vercel.app 
-GitHub
+**Live demo:** [care-sync-inky.vercel.app](https://care-sync-inky.vercel.app)
 
-✨ Features
-Patient
+---
 
-Sign up / login, profile management
+## ✨ Features
 
-Browse doctors & specializations
+### 🤖 AI Symptom Checker (new)
+- Patients describe their symptoms in plain language. The AI recommends **one of the platform's specialities**, with an urgency level (low / moderate / high), a short reason, an alternative speciality and safe self-care tips.
+- Matching doctors are shown right below the result, with available doctors first and one-click booking.
+- **Emergency detection:** red-flag symptoms (chest pain, breathing difficulty, stroke signs, etc.) show a "Seek emergency care now, call 112" banner instead of doctor cards.
+- Symptoms are **carried into the booking** and saved on the appointment, so the **doctor sees them** in their panel.
+- Personalised with the patient's age and gender from their profile.
+- Built-in safeguards:
+  - The AI's answer is restricted to a fixed list of specialities and checked again on the server.
+  - The AI never diagnoses or names medicines.
+  - Input that isn't about health symptoms is rejected.
+  - Requests are rate-limited per user.
+  - If Google's servers are busy, the backend retries automatically and then switches to a backup model.
+- Available from the **AI CHECKER** navbar link and the "Not sure which doctor to see?" box on the home page. You must be logged in to use it.
 
-Real-time slot availability & appointment booking
+### 🧑 Patient (frontend)
+- Sign up, log in, and edit your profile (photo, address, gender, date of birth, phone)
+- Browse doctors and filter by speciality
+- Book appointments in 30-minute slots over the next 7 days, with an optional symptoms note for the doctor
+- View and cancel appointments
+- Pay online with **Razorpay**
 
-View, reschedule, or cancel appointments
+### 🩺 Doctor (admin panel)
+- Secure login and dashboard (earnings, appointments, patients, latest bookings)
+- View appointments with patient details, age and **reported symptoms**
+- Mark appointments as completed or cancelled
+- Update profile (fees, address, availability, about)
 
-Notifications/toasts for key actions
+### 🛠️ Admin (admin panel)
+- Dashboard with platform overview
+- Add doctors (image upload via Cloudinary)
+- View all doctors and toggle availability
+- View and cancel any appointment
 
-Doctor
+**Specialities:** General physician · Gynecologist · Dermatologist · Pediatricians · Neurologist · Gastroenterologist
 
-Secure login & role-based dashboard
+---
 
-Manage availability & time slots
+## 🧱 Tech Stack
 
-View upcoming / past appointments
+| Layer | Technologies |
+|---|---|
+| Frontend (patient) | React 18, Vite, React Router 7, Tailwind CSS, Axios, React Toastify |
+| Admin / Doctor panel | React 18, Vite, React Router 7, Tailwind CSS 4, Axios, React Toastify |
+| Backend | Node.js, Express 4, JWT, bcrypt, validator, Multer |
+| Database | MongoDB Atlas + Mongoose 8 |
+| AI | Google Gemini API (`@google/genai`), `express-rate-limit` |
+| Media / Payments | Cloudinary, Razorpay |
+| Hosting | Vercel (frontend + admin), Render (backend) |
 
-Mark appointments as confirmed / completed / cancelled
+---
 
-Update profile & clinic details
+## 📂 Project Structure
 
-Admin
-
-Admin dashboard with system overview
-
-Manage doctors (verify, activate/deactivate)
-
-View platform-wide appointments
-
-Basic user management
-
-Folder layout seen in repo: admin/, backend/, frontend/, Testing_pic/. 
-GitHub
-
-🧱 Tech Stack
-
-Frontend: React (SPA), React Router, Axios, Toast notifications, CSS utility framework (e.g., Tailwind/Bootstrap)
-
-Backend: Node.js, Express.js, REST APIs, JWT auth, bcrypt
-
-Database: MongoDB (Mongoose ODM)
-
-Storage/Media (optional): Cloudinary + Multer (if using profile images)
-
-Deploy: Vercel / Render / Railway / Netlify (as applicable)
-
-The repo description confirms MERN + role-based access and the live Vercel link. 
-GitHub
-
-📂 Monorepo Structure
+```
 CareSync/
-├─ admin/        # Admin portal (React app)
-├─ frontend/     # Patient/Doctor app (React app)
-├─ backend/      # Express API + MongoDB
-└─ Testing_pic/  # Screenshots/assets for README or testing
+├─ backend/                 # Express REST API
+│  ├─ config/               # MongoDB + Cloudinary setup
+│  ├─ controllers/          # admin, doctor, user, ai (symptom checker)
+│  ├─ middlewares/          # authAdmin, authDoctor, authUser, multer, aiLimiter
+│  ├─ models/               # user, doctor, appointment
+│  ├─ routes/               # /api/admin, /api/doctor, /api/user
+│  └─ server.js
+├─ frontend/                # Patient web app (React + Vite)
+│  └─ src/
+│     ├─ pages/             # Home, Doctors, Appointment, SymptomChecker, MyAppointments, ...
+│     ├─ components/        # Navbar, Header, SymptomTeaser, TopDoctors, ...
+│     └─ context/AppContext.jsx
+├─ admin/                   # Admin + Doctor panel (React + Vite)
+│  └─ src/
+│     ├─ pages/Admin/       # Dashboard, AddDoctor, DoctorList, AllApointments
+│     ├─ pages/Doctor/      # DoctorDashboard, DoctorAppointmnets, DoctorProfile
+│     └─ context/
+└─ Testing_pic/             # API testing screenshots
+```
 
-⚙️ Environment Variables
+---
 
-Create .env files as shown below (adjust to your actual names if different):
+## ⚙️ Environment Variables
 
-Backend (backend/.env)
-PORT=5000
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
-CLIENT_URL=http://localhost:5173        # frontend dev URL
-ADMIN_URL=http://localhost:5174         # admin dev URL
-CLOUDINARY_CLOUD_NAME=your_cloud_name   # optional
-CLOUDINARY_API_KEY=your_api_key         # optional
-CLOUDINARY_API_SECRET=your_api_secret   # optional
+Create a `.env` file in each app folder. These files are gitignored, so **never commit them**.
 
-Frontend (frontend/.env)
-VITE_API_BASE_URL=http://localhost:5000
+### `backend/.env`
+```env
+PORT=4000
 
-Admin (admin/.env)
-VITE_API_BASE_URL=http://localhost:5000
+# MongoDB Atlas connection string (the database name "CareSync" is set in code)
+MONGODB_URL=mongodb+srv://<user>:<password>@<cluster>.mongodb.net
 
+# Auth
+JWT_SECRET=any_long_random_string
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=your_admin_password
 
-If you don’t use Cloudinary or split client/admin ports, remove those keys.
+# Cloudinary (doctor / profile image uploads)
+CLOUDINARY_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_SECRET_API=
 
-🚀 Local Development
-1) Clone
+# Razorpay (online payments); the server will not start without these
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+CURRENCY=INR
+
+# Google Gemini (AI Symptom Checker); free key at https://aistudio.google.com
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-3.5-flash-lite
+GEMINI_FALLBACK_MODEL=gemini-3.8-flash
+
+# Optional: only if MongoDB fails with "querySrv ECONNREFUSED" on your machine
+# DNS_SERVERS=8.8.8.8,1.1.1.1
+```
+
+### `frontend/.env`
+```env
+VITE_BACKEND_URL=http://localhost:4000
+VITE_RAZORPAY_KEY_ID=
+```
+
+### `admin/.env`
+```env
+VITE_BACKEND_URL=http://localhost:4000
+```
+
+---
+
+## 🚀 Run Locally
+
+**Prerequisites:** Node.js 18+, a MongoDB Atlas cluster, and Cloudinary, Razorpay (test mode) and Gemini API keys.
+
+```bash
+# 1. Clone
 git clone https://github.com/anurag16067/CareSync.git
 cd CareSync
 
-2) Install dependencies
-# backend
-cd backend
-npm install
-# or: pnpm i / yarn
+# 2. Install dependencies
+cd backend  && npm install
+cd ../frontend && npm install
+cd ../admin && npm install
+```
 
-# frontend
-cd ../frontend
-npm install
+Run each app in its own terminal:
 
-# admin
-cd ../admin
-npm install
+| App | Command | URL |
+|---|---|---|
+| Backend | `cd backend && npm run server` (or `npm start`) | http://localhost:4000 |
+| Patient frontend | `cd frontend && npm run dev` | http://localhost:5173 |
+| Admin / Doctor panel | `cd admin && npm run dev` | http://localhost:5174 |
 
-3) Run development servers
+The backend should print `Database connected` and `Server Started 4000`.
 
-Open three terminals, one per app:
+### First-time setup
+1. Log into the **admin panel** with `ADMIN_EMAIL` / `ADMIN_PASSWORD` and **add doctors**. The AI checker can only recommend doctors that exist.
+2. On the **patient site**, create an account (password of at least 8 characters) and try **AI CHECKER**.
+3. Book a doctor from the AI result, then log into the admin panel **as that doctor** to see the patient's symptoms on the appointment.
 
-# Terminal 1 - backend
-cd backend
-npm run dev    # nodemon or equivalent
+---
 
-# Terminal 2 - frontend
-cd frontend
-npm run dev    # likely runs on http://localhost:5173
+## 🗺️ API Reference
 
-# Terminal 3 - admin
-cd admin
-npm run dev    # likely runs on http://localhost:5174
+Base URL: `http://localhost:4000`. Protected routes need a token. Patients send a `token` header, doctors send a `dtoken` header, and admins send `Authorization: Bearer <token>`.
 
+### User: `/api/user`
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| POST | `/register` | – | Create patient account |
+| POST | `/login` | – | Log in, returns JWT |
+| GET | `/get-profile` | user | Get profile |
+| POST | `/update-profile` | user | Update profile (multipart, optional image) |
+| POST | `/book-appointment` | user | Book slot `{ docId, slotDate, slotTime, symptoms? }` |
+| GET | `/appointments` | user | List my appointments |
+| POST | `/cancel-appointment` | user | Cancel appointment |
+| POST | `/payment-razorpay` | user | Create Razorpay order |
+| POST | `/verifyRazorpay` | user | Verify payment |
+| POST | `/ai/symptom-check` | user | **AI specialist recommendation** `{ symptoms, duration? }` |
 
-Adjust ports/commands if your package.json scripts differ.
-
-🗺️ API Overview (Typical Endpoints)
-
-Names may differ—align with your actual routes.
-
-Auth
-
-POST /api/auth/register — create account
-
-POST /api/auth/login — login, returns JWT
-
-GET /api/auth/me — get current user (auth)
-
-Doctors
-
-GET /api/doctors — list doctors
-
-GET /api/doctors/:id — doctor profile
-
-POST /api/doctors — (admin) add/verify doctor
-
-PATCH /api/doctors/:id/status — (admin) activate/deactivate
-
-Appointments
-
-POST /api/appointments — create booking
-
-GET /api/appointments/my — user’s appointments
-
-PATCH /api/appointments/:id — update status (doctor/admin)
-
-DELETE /api/appointments/:id — cancel
-
-Slots/Availability
-
-GET /api/availability?doctorId=&date= — fetch slots
-
-POST /api/availability — (doctor) manage schedule
-
-🔐 Authentication & Security
-
-JWT for stateless auth; tokens stored securely on client
-
-bcrypt for password hashing
-
-Route guards/middleware for role-based access (patient/doctor/admin)
-
-Basic input validation and centralized error handling
-
-🧪 Testing (optional)
-
-Unit tests: Jest / Vitest
-
-API tests: Supertest / Postman collection
-
-Lint & type checks: ESLint, TypeScript (if enabled)
-
-📦 Scripts (examples)
-
-Adjust to your package.json:
-
-backend/package.json
-
+Example AI response:
+```json
 {
-  "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+  "success": true,
+  "result": {
+    "speciality": "Pediatricians",
+    "alternative": "General physician",
+    "urgency": "moderate",
+    "emergency": false,
+    "reason": "Since the patient is a 4-year-old child, a pediatrician is the best choice...",
+    "tips": ["Keep your child well hydrated", "Ensure plenty of rest", "Monitor temperature regularly"]
   }
 }
+```
 
+### Doctor: `/api/doctor`
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| GET | `/list` | – | Public doctor list |
+| POST | `/login` | – | Doctor login |
+| GET | `/appointments` | doctor | Doctor's appointments |
+| POST | `/complete-appointment` | doctor | Mark completed |
+| POST | `/cancel-appointment` | doctor | Cancel |
+| GET | `/dashboard` | doctor | Dashboard stats |
+| GET | `/profile` | doctor | Get profile |
+| POST | `/update-profile` | doctor | Update fees / address / availability |
 
-frontend/package.json and admin/package.json
+### Admin: `/api/admin`
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| POST | `/login` | – | Admin login |
+| POST | `/add-doctor` | admin | Add doctor (multipart with image) |
+| POST | `/all-doctors` | admin | List all doctors |
+| POST | `/change-availability` | admin | Toggle doctor availability |
+| GET | `/appointments` | admin | All appointments |
+| POST | `/cancel-appointment` | admin | Cancel any appointment |
+| GET | `/dashboard` | admin | Platform stats |
 
-{
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  }
-}
+---
 
-🖼️ Screenshots
+## 🔐 Security
+- Passwords hashed with **bcrypt**; stateless **JWT** auth with separate middleware per role
+- The Gemini API key lives **only on the backend** and is never exposed to the browser
+- AI endpoint protected by login + rate limiting (10 requests / 15 min per user)
+- AI output is validated server-side against a whitelist before reaching the client
 
-Add images from Testing_pic/ here for quick visual context:
+> ⚠️ The AI Symptom Checker provides guidance only and is **not a medical diagnosis**. In an emergency, contact local emergency services.
 
-/Testing_pic
-  ├─ dashboard.png
-  ├─ booking-flow.png
-  └─ admin-panel.png
+---
+
+## ☁️ Deployment
+
+| App | Platform | Notes |
+|---|---|---|
+| Backend | Render | Start command `npm start`. Add every `backend/.env` variable (except `DNS_SERVERS`) under **Environment**. |
+| Frontend | Vercel | Root directory `frontend`, env `VITE_BACKEND_URL=<your Render URL>`, `VITE_RAZORPAY_KEY_ID` |
+| Admin | Vercel | Root directory `admin`, env `VITE_BACKEND_URL=<your Render URL>` |
+
+Pushing to `main` redeploys automatically if auto-deploy is enabled.
+
+---
+
+## 🧪 API Testing Screenshots
+
+| Admin: list all doctors (Postman) | User: register validation (Thunder Client) |
+|---|---|
+| ![All doctors API](Testing_pic/Screenshot%202025-03-15%20101525.png) | ![Register validation](Testing_pic/Screenshot%202025-03-16%20021435.png) |
+
+| User: get profile with JWT (Thunder Client) |
+|---|
+| ![Get profile API](Testing_pic/Screenshot%202025-03-21%20014719.png) |
+
+---
+
+## 👤 Author
+
+**Anurag Kumar** · [GitHub @anurag16067](https://github.com/anurag16067)

@@ -1,5 +1,5 @@
 // import React from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useContext, useEffect, useState } from 'react'
 import { AppContext } from '../context/AppContext'
 import { assets } from '../assets/assets'
@@ -14,12 +14,15 @@ const Appointment = () => {
   const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
   const navigate = useNavigate()
+  const location = useLocation()
 
   // State variable to store the doctor info
   const [docInfo, setDocInfo] = useState(null)
   const [docSlots, setDocSlots] = useState([])
   const [slotIndex, setSlotIndex] = useState(0)
   const [slotTime, setSlotTime] = useState('')
+  // prefilled when coming from the AI symptom checker
+  const [symptoms, setSymptoms] = useState(location.state?.symptoms || '')
 
 
   //fetchDocInfo will fetch the doctor info from the doctors array
@@ -93,7 +96,7 @@ const Appointment = () => {
       // console.log(slotDate)
 
       //api call to book appointment
-      const {data} = await axios.post(backendUrl + '/api/user/book-appointment', {docId, slotDate, slotTime}, {headers: {token}})
+      const {data} = await axios.post(backendUrl + '/api/user/book-appointment', {docId, slotDate, slotTime, symptoms}, {headers: {token}})
       if(data.success){
         toast.success(data.message)
         getDoctorsData()
@@ -174,6 +177,18 @@ const Appointment = () => {
               {item.time.toLowerCase()}
             </p>
           ))}
+        </div>
+
+        <div className='mt-6 max-w-xl'>
+          <p className='text-sm'>Your symptoms <span className='font-light text-gray-400'>(optional, shared with the doctor)</span></p>
+          <textarea
+            value={symptoms}
+            onChange={(e) => setSymptoms(e.target.value)}
+            maxLength={500}
+            rows={3}
+            className='w-full mt-2 border border-gray-300 rounded p-3 text-sm font-light outline-primary'
+            placeholder='Briefly describe what you are experiencing'
+          />
         </div>
         <button onClick={bookAppointment} className='bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6'>Book an Appointment
         </button>

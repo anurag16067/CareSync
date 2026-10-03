@@ -119,6 +119,7 @@ const updateProfile = async (req, res) => {
 const bookAppointment = async (req, res) => {
     try {
         const {userId, docId, slotDate, slotTime} = req.body;
+        const symptoms = typeof req.body.symptoms === 'string' ? req.body.symptoms.trim().slice(0, 500) : ''
         const docData = await doctorModel.findById(docId).select('-password')
 
         if(!docData.availability){
@@ -153,6 +154,7 @@ const bookAppointment = async (req, res) => {
             amount:docData.fees,
             slotTime,
             slotDate,
+            symptoms,
             date: Date.now()
         }
         const newAppointment = new appointmentModel(appointmentData)

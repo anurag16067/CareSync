@@ -2,6 +2,8 @@ import express from 'express';
 import { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment, paymentRazorpay, verifyRazorpay } from '../controllers/userController.js';
 import authUser from '../middlewares/authUser.js';
 import upload from '../middlewares/multer.js';
+import aiLimiter from '../middlewares/aiLimiter.js';
+import { symptomCheck } from '../controllers/aiController.js';
 
 const userRouter = express.Router();
 
@@ -14,6 +16,7 @@ userRouter.get('/appointments', authUser, listAppointment);
 userRouter.post('/cancel-appointment', authUser, cancelAppointment);
 userRouter.post('/payment-razorpay', authUser, paymentRazorpay);
 userRouter.post('/verifyRazorpay', authUser, verifyRazorpay);
+userRouter.post('/ai/symptom-check', authUser, aiLimiter, symptomCheck);
 
 
 
