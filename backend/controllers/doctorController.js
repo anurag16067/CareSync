@@ -2,6 +2,7 @@ import doctorModel from '../models/doctorModel.js'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import appointmentModel from '../models/appointmentModel.js'
+import { cancelAndReleaseSlot } from '../utils/slots.js'
 
 const changeAvailablity = async (req, res) => {
     try {
@@ -93,7 +94,10 @@ const appointmentCancel = async (req, res) => {
         const {docId, appointmentId} = req.body
         const appointmentData = await appointmentModel.findById(appointmentId)
         if(appointmentData && appointmentData.docId === docId) {
-            await appointmentModel.findByIdAndUpdate(appointmentId, {cancelled: true})
+            // also frees the slot so other patients can book it again
+            if (!(await cancelAndReleaseSlot(appointmentId))) {
+                return res.json({success:false, message:'Appointment already cancelled'})
+            }
             return res.json({success:true, message:'apppointment cancelled'})
         } else {
             return res.json({success:false, message:'Cancellation failed'})

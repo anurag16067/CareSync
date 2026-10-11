@@ -17,6 +17,12 @@ const appointmentSchema = new mongoose.Schema({
 
 })
 
+// only one active (non-cancelled) appointment per doctor slot; safety net against double booking
+appointmentSchema.index(
+    { docId: 1, slotDate: 1, slotTime: 1 },
+    { unique: true, partialFilterExpression: { cancelled: false } }
+)
+
 const appointmentModel = mongoose.models.appointment || mongoose.model("appointment", appointmentSchema);
 
 export default appointmentModel;

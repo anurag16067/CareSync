@@ -5,6 +5,7 @@ import doctorModel from "../models/doctorModel.js"
 import jwt from "jsonwebtoken"
 import appointmentModel from "../models/appointmentModel.js"
 import userModel from "../models/userModel.js"
+import { cancelAndReleaseSlot } from "../utils/slots.js"
 
 
 //API for adding doctor
@@ -112,15 +113,9 @@ const appointmentsAdmin = async (req, res) => {
 const appointmentCancel = async (req, res) => {
     try {
         const { appointmentId} = req.body;
-        const appointmentData = await appointmentModel.findById(appointmentId)
-        await appointmentModel.findByIdAndUpdate(appointmentId, {cancelled:true})
-
-        // releasing the booked slots
-        const {docId, slotDate, slotTime} = appointmentData
-        const doctorData = await doctorModel.findById(docId)
-        let slots_booked = doctorData.slots_booked
-        slots_booked[slotDate] = slots_booked[slotDate].filter((e) => e !== slotTime)
-        await doctorModel.findByIdAndUpdate(docId, {slots_booked})
+        if (!(await cancelAndReleaseSlot(appointmentId))) {
+            return res.json({success:false, message:"Appointment not found or already cancelled"})
+        }
         res.json({success:true, message:"Appointment Cancelled"})
 
 
