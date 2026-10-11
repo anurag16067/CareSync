@@ -53,11 +53,15 @@ const accountExists = async (subject, role) => {
     return Boolean(await model.exists({ _id: subject }));
 }
 
-// end every session from one login, including tokens still inside the rotation grace window
-export const revokeFamily = async (family) => {
-    await refreshTokenModel.updateMany({ family, revokedAt: null }, { revokedAt: new Date() });
-    await refreshTokenModel.updateMany({ family }, { revokedReason: 'compromised' });
+// End every token matching the filter, including rotated ones still inside the grace window
+// (otherwise the previous token could start a new session right after logout).
+const endTokens = async (filter, reason) => {
+    await refreshTokenModel.updateMany({ ...filter, revokedAt: null }, { revokedAt: new Date() });
+    await refreshTokenModel.updateMany({ ...filter, revokedReason: { $ne: 'compromised' } }, { revokedReason: reason });
 }
+
+// end every session from one login (theft detected)
+export const revokeFamily = (family) => endTokens({ family }, 'compromised');
 
 // Rotate the refresh token from the cookie. Returns a new access token, or null if the session is invalid.
 export const rotateSession = async (req, res, role) => {
@@ -94,16 +98,13 @@ export const rotateSession = async (req, res, role) => {
     return signAccessToken(row.subject, role);
 }
 
-// Revoke the current refresh token (or all of this account's tokens) and clear the cookie
+// End this login's whole token family (or every login of this account) and clear the cookie
 export const endSession = async (req, res, role, { everywhere = false } = {}) => {
     const raw = req.cookies?.[cookieName(role)];
     if (raw) {
-        const row = await refreshTokenModel.findOneAndUpdate(
-            { tokenHash: hash(raw), role, revokedAt: null },
-            { revokedAt: new Date(), revokedReason: 'logout' }
-        );
-        if (row && everywhere) {
-            await refreshTokenModel.updateMany({ subject: row.subject, role, revokedAt: null }, { revokedAt: new Date(), revokedReason: 'logout' });
+        const row = await refreshTokenModel.findOne({ tokenHash: hash(raw), role });
+        if (row) {
+            await endTokens(everywhere ? { subject: row.subject, role } : { family: row.family }, 'logout');
         }
     }
     const { maxAge, ...clearOptions } = cookieOptions(req);
