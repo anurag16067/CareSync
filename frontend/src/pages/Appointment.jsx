@@ -5,12 +5,12 @@ import { AppContext } from '../context/AppContext'
 import { assets } from '../assets/assets'
 import RelatedDoctors from '../components/RelatedDoctors'
 import { toast } from 'react-toastify'
-import { api } from '../api'
+import { api, userAuth } from '../api'
 
 const Appointment = () => {
 
   const {docId} = useParams()
-  const {doctors, currencySymbol, backendUrl, token, getDoctorsData} = useContext(AppContext)
+  const {doctors, currencySymbol, token, getDoctorsData} = useContext(AppContext)
   const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
   const navigate = useNavigate()
@@ -33,6 +33,9 @@ const Appointment = () => {
   }
 
   const getAvailableSlots = async () => {
+    // runs once before the doctor list has loaded; wait until docInfo exists
+    if (!docInfo) return;
+    const slotsBooked = docInfo.slots_booked || {};
     const allSlots = [];
     let today = new Date();
 
@@ -62,7 +65,7 @@ const Appointment = () => {
             const slotDate = day +"_"+ month +"_"+ year 
             const slotTime = formattedTime
 
-            const isSlotAvailable = docInfo.slots_booked[slotDate] && docInfo.slots_booked[slotDate].includes(slotTime) ? false : true
+            const isSlotAvailable = !slotsBooked[slotDate]?.includes(slotTime)
 
             if(isSlotAvailable) {
               timeSlots.push({
@@ -80,9 +83,13 @@ const Appointment = () => {
 };
 
   const bookAppointment = async () => {
-    if(!token){
+    // right after a page load the session may still be restoring from the refresh cookie
+    if(!token && !(await userAuth.refresh())){
       toast.warn('Please login to book an appointment')
       return navigate('/login')
+    }
+    if (!slotTime || !docSlots[slotIndex]?.length) {
+      return toast.warn('Please select an available time slot')
     }
     try {
 

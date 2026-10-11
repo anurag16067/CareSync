@@ -11,6 +11,10 @@ const refresh = async (req, res) => {
     try {
         const role = validRole(req, res);
         if (!role) return;
+        // no cookie at all = simply logged out (the app checks on every page load), not an error
+        if (!req.cookies?.[`rt_${role}`]) {
+            return res.json({ success: false, code: 'NO_SESSION' });
+        }
         const token = await rotateSession(req, res, role);
         if (!token) {
             await endSession(req, res, role);
