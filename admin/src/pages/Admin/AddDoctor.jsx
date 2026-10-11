@@ -3,7 +3,7 @@ import { assets } from '../../assets/assets'
 import { useState } from 'react'
 import { AdminContext } from '../../context/AdminContext'
 import { toast } from 'react-toastify'
-import axios from 'axios'
+import { adminApi } from '../../api'
 
 const AddDoctor = () => {
   // state variables for doctor image upload and doctor image preview
@@ -55,16 +55,9 @@ const AddDoctor = () => {
       })
 
       //call api to save details of doctor
-      // const {data} = await axios.post(backendUrl + '/api/admin/add-doctor', formData, {headers: {aToken}})
       
-      const { data } = await axios.post(
-        `${backendUrl}/api/admin/add-doctor`, 
-        formData, 
-        {
-            headers: { 
-                "Authorization": `Bearer ${aToken}` // ✅ Correct format
-            }
-        }
+      const { data } = await adminApi.post('/api/admin/add-doctor', 
+        formData
       );
     
       if(data.success){

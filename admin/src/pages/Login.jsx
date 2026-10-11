@@ -2,7 +2,7 @@ import React from 'react'
 import { assets } from '../assets/assets'
 import { useState, useContext } from 'react'
 import { AdminContext } from '../context/AdminContext'
-import axios from 'axios'
+import { adminApi, doctorApi } from '../api'
 import {toast} from 'react-toastify'
 import { DoctorContext } from '../context/DoctorContext'
 
@@ -21,24 +21,21 @@ const Login = () => {
     event.preventDefault() // it will not reload the page when submit the form
     try {
       if(state === 'Admin') {
-        const {data} = await axios.post(backendUrl + '/api/admin/login', {email, password})
+        const {data} = await adminApi.post('/api/admin/login', {email, password})
         if(data.success){
           // console.log(data.token)
           // store token 
-          localStorage.setItem('aToken', data.token) // store token in local storage as when we refresh the page the token will be lost
           setAToken(data.token)
         }
         else {
           toast.error(data.message)
         }
       } else {
-        const {data} = await axios.post(backendUrl + '/api/doctor/login', {email, password})
+        const {data} = await doctorApi.post('/api/doctor/login', {email, password})
         if(data.success){
           // console.log(data.token)
           // store token 
-          localStorage.setItem('dToken', data.token) // store token in local storage as when we refresh the page the token will be lost
           setDToken(data.token)
-          console.log(data.token)
         }
         else {
           toast.error(data.message)

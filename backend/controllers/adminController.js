@@ -2,10 +2,10 @@ import validator from "validator"
 import bcrypt from "bcrypt"
 import {v2 as cloudinary} from "cloudinary"
 import doctorModel from "../models/doctorModel.js"
-import jwt from "jsonwebtoken"
 import appointmentModel from "../models/appointmentModel.js"
 import userModel from "../models/userModel.js"
 import { cancelAndReleaseSlot } from "../utils/slots.js"
+import { startSession } from "../utils/tokens.js"
 
 
 //API for adding doctor
@@ -70,7 +70,8 @@ const loginAdmin = async (req,res) => {
         
         const {email,password} = req.body;   
         if(email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD){
-            const token = jwt.sign(email+password, process.env.JWT_SECRET)
+            // the token carries only a role claim, never the admin credentials
+            const token = await startSession(req, res, 'admin', 'admin')
            res.json({success:true,token})
         }
         else {

@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AppContext } from '../context/AppContext'
 import { toast } from 'react-toastify'
-import axios from 'axios'
+import { api } from '../api'
 
 const durations = ['Less than a day', '1-3 days', 'About a week', 'More than a week']
 const quickChips = ['Fever', 'Headache', 'Skin rash', 'Stomach pain', 'Child is sick']
@@ -36,7 +36,7 @@ const SymptomChecker = () => {
     setLoading(true)
     setResult(null)
     try {
-      const { data } = await axios.post(backendUrl + '/api/user/ai/symptom-check', { symptoms, duration }, { headers: { token } })
+      const { data } = await api.post('/api/user/ai/symptom-check', { symptoms, duration })
       if (data.success) {
         setResult(data.result)
       } else {

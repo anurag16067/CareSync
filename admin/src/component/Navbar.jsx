@@ -7,17 +7,16 @@ import { DoctorContext } from '../context/DoctorContext'
 
 const Navbar = () => {
 
-  const {aToken, setAToken} = useContext(AdminContext)
-  const {dToken, setDToken} = useContext(DoctorContext)
+  const {aToken, adminLogout} = useContext(AdminContext)
+  const {dToken, doctorLogout} = useContext(DoctorContext)
 
   const navigate = useNavigate()
 
-  const logout = () => {
+  // revokes the refresh token on the server, not just in this browser
+  const logout = async () => {
     navigate('/')
-    aToken && setAToken('')
-    aToken && localStorage.removeItem('aToken')
-    dToken && setDToken('')
-    dToken && localStorage.removeItem('dToken')
+    if (aToken) await adminLogout()
+    if (dToken) await doctorLogout()
   }
 
     

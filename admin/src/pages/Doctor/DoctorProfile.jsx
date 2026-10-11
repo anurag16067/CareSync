@@ -3,7 +3,7 @@ import { useContext } from 'react'
 import { DoctorContext } from '../../context/DoctorContext'
 import { AppContext } from '../../context/AppContext'
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import { doctorApi } from '../../api'
 import { toast } from 'react-toastify'
 
 
@@ -22,7 +22,7 @@ const DoctorProfile = () => {
         availability: profileData.availability
       }
 
-      const { data } = await axios.post(backendUrl + "/api/doctor/update-profile", updateData, { headers: { dToken } })
+      const { data } = await doctorApi.post('/api/doctor/update-profile', updateData)
       if (data.success) {
         toast.success(data.message)
         setIsEdit(false)

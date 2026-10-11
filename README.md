@@ -98,6 +98,11 @@ MONGODB_URL=mongodb+srv://<user>:<password>@<cluster>.mongodb.net
 
 # Auth
 JWT_SECRET=any_long_random_string
+JWT_ACCESS_SECRET=another_long_random_string   # signs 15-minute access tokens
+ACCESS_TOKEN_TTL=15m
+REFRESH_TOKEN_DAYS=7
+# Sites allowed to call the API with cookies (add your Vercel URLs in production)
+CLIENT_URLS=http://localhost:5173,http://localhost:5174
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=your_admin_password
 
@@ -122,13 +127,14 @@ GEMINI_FALLBACK_MODEL=gemini-3.8-flash
 
 ### `frontend/.env`
 ```env
-VITE_BACKEND_URL=http://localhost:4000
+# Leave empty to use the /api proxy (Vite in dev, vercel.json in production)
+VITE_BACKEND_URL=
 VITE_RAZORPAY_KEY_ID=
 ```
 
 ### `admin/.env`
 ```env
-VITE_BACKEND_URL=http://localhost:4000
+VITE_BACKEND_URL=
 ```
 
 ---
@@ -167,7 +173,14 @@ The backend should print `Database connected` and `Server Started 4000`.
 
 ## 🗺️ API Reference
 
-Base URL: `http://localhost:4000`. Protected routes need a token. Patients send a `token` header, doctors send a `dtoken` header, and admins send `Authorization: Bearer <token>`.
+Base URL: `http://localhost:4000`. Protected routes need `Authorization: Bearer <access token>`. Login returns a 15-minute access token and sets an httpOnly refresh cookie (`rt_user`, `rt_doctor` or `rt_admin`).
+
+### Auth: `/api/auth`
+| Method | Route | Description |
+|---|---|---|
+| POST | `/:role/refresh` | Rotate the refresh cookie, return a new access token (`role` = user, doctor, admin) |
+| POST | `/:role/logout` | Revoke the refresh token on the server and clear the cookie |
+| POST | `/:role/logout-all` | Log out of every device for this account |
 
 ### User: `/api/user`
 | Method | Route | Auth | Description |
@@ -224,7 +237,11 @@ Example AI response:
 ---
 
 ## 🔐 Security
-- Passwords hashed with **bcrypt**; stateless **JWT** auth with separate middleware per role
+- Passwords hashed with **bcrypt**
+- **Short-lived access tokens** (15 min, in memory only) + **rotating refresh tokens** (7 days, httpOnly `SameSite=Strict` cookie, stored hashed in MongoDB)
+- **Server-side logout** revokes the session; reuse of a rotated refresh token revokes the whole login family (theft detection)
+- Admin token carries only a role claim (no credentials)
+- **Double booking prevented** with an atomic slot claim plus a unique index on active appointments
 - The Gemini API key lives **only on the backend** and is never exposed to the browser
 - AI endpoint protected by login + rate limiting (10 requests / 15 min per user)
 - AI output is validated server-side against a whitelist before reaching the client

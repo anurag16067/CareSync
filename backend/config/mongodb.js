@@ -8,7 +8,7 @@ if (process.env.DNS_SERVERS) {
 
 const connectDB = async () => {
     mongoose.connection.on('connected', () => console.log("Database connected"));
-    await mongoose.connect(process.env.MONGODB_URL, { dbName: 'CareSync' });
+    await mongoose.connect(process.env.MONGODB_URL, { dbName: process.env.MONGODB_DB || 'CareSync' });
 };
 
 export default connectDB;

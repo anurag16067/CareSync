@@ -9,15 +9,16 @@ const Navbar = () => {
 
     const navigate = useNavigate();
 
-    const {token, setToken, userData} = useContext(AppContext);
+    const {token, logout: endSession, userData} = useContext(AppContext);
 
     const [showMenu, setshowMenu] = useState(false);
     // const [token,setToken] = useState(true); //for temporary use
     //if don't have token then logout button will be shown
 
-    const logout = () => {
-        setToken(false)
-        localStorage.removeItem('token')
+    // revokes the refresh token on the server, not just in this browser
+    const logout = async () => {
+        await endSession()
+        navigate('/')
     }
 
 

@@ -5,7 +5,7 @@ import { AppContext } from '../context/AppContext'
 import { assets } from '../assets/assets'
 import RelatedDoctors from '../components/RelatedDoctors'
 import { toast } from 'react-toastify'
-import axios from 'axios'
+import { api } from '../api'
 
 const Appointment = () => {
 
@@ -96,7 +96,7 @@ const Appointment = () => {
       // console.log(slotDate)
 
       //api call to book appointment
-      const {data} = await axios.post(backendUrl + '/api/user/book-appointment', {docId, slotDate, slotTime, symptoms}, {headers: {token}})
+      const {data} = await api.post('/api/user/book-appointment', {docId, slotDate, slotTime, symptoms})
       if(data.success){
         toast.success(data.message)
         getDoctorsData()

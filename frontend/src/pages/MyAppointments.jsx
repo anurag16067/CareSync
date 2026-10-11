@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { AppContext } from '../context/AppContext'
-import axios from 'axios'
+import { api } from '../api'
 import { toast } from 'react-toastify'
 import { useNavigate } from 'react-router-dom'
 
@@ -20,7 +20,7 @@ const MyAppointments = () => {
 
   const getUserAppointments = async () => {
     try {
-      const {data} = await axios.get(backendUrl + '/api/user/appointments', {headers:{token}})
+      const {data} = await api.get('/api/user/appointments')
 
       if(data.success){
         setAppointments(data.appointments.reverse())
@@ -37,7 +37,7 @@ const MyAppointments = () => {
   const cancelAppointment = async (appointmentId) => {
     try {
       // console.log(appointmentId)
-      const {data} = await axios.post(backendUrl + '/api/user/cancel-appointment', {appointmentId}, {headers:{token}})
+      const {data} = await api.post('/api/user/cancel-appointment', {appointmentId})
 
       if(data.success){
         toast.success(data.message)
@@ -65,7 +65,7 @@ const MyAppointments = () => {
       handler: async (response) => {
         console.log(response) // using this response to verify payment in backend
         try {
-          const {data} = await axios.post(backendUrl + '/api/user/verifyRazorpay', {razorpay_order_id: response.razorpay_order_id}, {headers:{token}})
+          const {data} = await api.post('/api/user/verifyRazorpay', {razorpay_order_id: response.razorpay_order_id})
           if(data.success){
             getUserAppointments()
             navigate('/my-appointments')
@@ -89,7 +89,7 @@ const MyAppointments = () => {
 
   const appointmentRazorpay = async (appointmentId) => {
     try {
-      const {data} = await axios.post(backendUrl + '/api/user/payment-razorpay', {appointmentId}, {headers:{token}})
+      const {data} = await api.post('/api/user/payment-razorpay', {appointmentId})
       if(data.success){
         // console.log(data.order) //using this order to create option to pay
         initPay(data.order)
